@@ -17,3 +17,9 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
+    product_likes = relationship("ProductLike", back_populates="user", cascade="all, delete-orphan")
+    product_comments = relationship(
+        "ProductComment",
+        back_populates="user",
+        cascade="all, delete-orphan",
+    )

@@ -1,6 +1,9 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+
+OrderStatus = Literal["pending", "assembling", "shipping", "arrived", "received"]
 
 
 class CheckoutItem(BaseModel):
@@ -29,8 +32,12 @@ class OrderRead(BaseModel):
     customer_phone: str
     location: str
     total_price: float
-    status: str
+    status: OrderStatus
     created_at: datetime
     items: list[OrderItemRead]
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class OrderStatusUpdate(BaseModel):
+    status: OrderStatus

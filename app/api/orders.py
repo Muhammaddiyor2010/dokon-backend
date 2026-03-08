@@ -47,6 +47,7 @@ def checkout(
         customer_phone=payload.customer_phone,
         location=payload.location,
         total_price=round(total, 2),
+        status="assembling",
     )
     db.add(order)
     db.flush()
@@ -58,7 +59,9 @@ def checkout(
     db.commit()
     db.refresh(order)
 
-    return db.scalar(select(Order).where(Order.id == order.id).options(joinedload(Order.items)))
+    return db.scalar(
+        select(Order).where(Order.id == order.id).options(joinedload(Order.items))
+    )
 
 
 @router.get("/my", response_model=list[OrderRead])
@@ -73,3 +76,29 @@ def my_orders(
         .order_by(Order.created_at.desc())
     )
     return db.scalars(stmt).unique().all()
+
+
+@router.patch("/{order_id}/received", response_model=OrderRead)
+def mark_order_received(
+    order_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    order = db.scalar(
+        select(Order)
+        .where(Order.id == order_id, Order.user_id == current_user.id)
+        .options(joinedload(Order.items))
+    )
+    if order is None:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if order.status == "received":
+        return order
+    if order.status != "arrived":
+        raise HTTPException(
+            status_code=400,
+            detail="Order can only be marked as received after it has arrived",
+        )
+    order.status = "received"
+    db.commit()
+    db.refresh(order)
+    return order

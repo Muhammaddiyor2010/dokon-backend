@@ -9,6 +9,10 @@ from app.models.user import User
 
 settings = get_settings()
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.api_prefix}/auth/login")
+oauth2_scheme_optional = OAuth2PasswordBearer(
+    tokenUrl=f"{settings.api_prefix}/auth/login",
+    auto_error=False,
+)
 
 
 def get_db():
@@ -38,6 +42,25 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     if user is None:
         raise auth_error
     return user
+
+
+def get_optional_user(
+    token: str | None = Depends(oauth2_scheme_optional),
+    db: Session = Depends(get_db),
+) -> User | None:
+    if not token:
+        return None
+
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        user_id = payload.get("sub")
+        if user_id is None:
+            return None
+        user_id = int(user_id)
+    except (JWTError, ValueError, TypeError):
+        return None
+
+    return db.get(User, user_id)
 
 
 def get_current_admin(current_user: User = Depends(get_current_user)) -> User:

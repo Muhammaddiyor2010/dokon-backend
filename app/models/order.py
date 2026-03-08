@@ -15,7 +15,7 @@ class Order(Base):
     customer_phone: Mapped[str] = mapped_column(String(20))
     location: Mapped[str] = mapped_column(String(255))
     total_price: Mapped[float] = mapped_column(Float)
-    status: Mapped[str] = mapped_column(String(50), default="pending")
+    status: Mapped[str] = mapped_column(String(50), default="assembling")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="orders")
